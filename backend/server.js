@@ -59,6 +59,7 @@ class SignatureInjectionEngine {
      * Converts normalized (percentage) coordinates into absolute PDF points.
      * Crucially handles PDF-lib's bottom-left origin for the Y-axis.
      */
+
     normalizeCoordinates(field, pdfWidth, pdfHeight) {
         return {
             x: field.xPct * pdfWidth,
@@ -69,9 +70,8 @@ class SignatureInjectionEngine {
         };
     }
 
-    /**
-     * Draws a single field onto the PDF page using PDF-lib.
-     */
+    //Draws a single field onto the PDF page using PDF-lib.
+    
     async injectField(pdfDoc, page, field, font) {
         const { width: pdfWidth, height: pdfHeight } = page.getSize();
         const pdfCoords = this.normalizeCoordinates(field, pdfWidth, pdfHeight);
@@ -269,9 +269,27 @@ app.post('/api/burn-fields', upload.single('pdf'), async (req, res) => {
 });
 
 
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
-});
+
+
+
+if (process.env.NODE_ENV !== 'production') {
+    const FRONTEND_DIST_PATH = path.join(__dirname, '../frontend/dist');
+
+    // 1. Serve the React frontend build files
+    app.use(express.static(FRONTEND_DIST_PATH));
+
+    // 2. Catch-all route to serve the React app for client-side routing
+    app.get('*', (req, res) => {
+        // This ensures local development works by serving index.html
+        res.sendFile(path.join(FRONTEND_DIST_PATH, 'index.html'));
+    });
+    
+    console.log(`[DEV MODE] Serving frontend from: ${FRONTEND_DIST_PATH}`);
+
+} else {
+    // In production (Render), we are API-only.
+    console.log('[PROD MODE] Running as API service only. Frontend served externally.');
+}
 
 
 app.listen(port, () => {
