@@ -1,4 +1,5 @@
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -6,8 +7,10 @@ const fs = require('fs/promises');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 
+
 // --- MongoDB Configuration ---
 const MONGO_URL = process.env.MONGO_URL;
+console.log(MONGO_URL);
 
 const AuditSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now },
@@ -20,7 +23,7 @@ const AuditEntry = mongoose.model('AuditEntry', AuditSchema);
 
 async function connectDB() {
     try {
-        await mongoose.connect(MONGO_URI);
+        await mongoose.connect(MONGO_URL);
         console.log('✓ MongoDB connection established successfully.');
     } catch (err) {
         console.error('✗ MongoDB connection error:', err.message);
