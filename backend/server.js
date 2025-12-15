@@ -6,11 +6,32 @@ const path = require('path');
 const fs = require('fs/promises');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
-
+const cors = require('cors'); // --- ADDED: CORS PACKAGE ---
 
 // --- MongoDB Configuration ---
 const MONGO_URL = process.env.MONGO_URL;
-console.log(MONGO_URL);
+
+
+
+const allowedOrigins = [
+    'https://signature-injection-engine-pdf-edit.vercel.app', 
+    'http://localhost:5173', 
+    'http://localhost:3000'  
+];
+
+const corsOptions = {
+    origin: (origin, callback) => {
+     
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'), false);
+        }
+    },
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type'],
+};
+
 
 const AuditSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now },
@@ -77,7 +98,6 @@ class SignatureInjectionEngine {
         const pdfCoords = this.normalizeCoordinates(field, pdfWidth, pdfHeight);
 
         // --- Draw Bounding Box (Conditional) ---
-        // Only draw the bounding box for radio fields (for visibility).
         if (field.type === 'radio') { 
             page.drawRectangle({
                 x: pdfCoords.x,
@@ -215,8 +235,8 @@ const app = express();
 const port = 3000;
 const engine = new SignatureInjectionEngine();
 
-// Serve the React frontend build
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
+// --- USE CORS MIDDLEWARE HERE ---
+app.use(cors(corsOptions));
 
 // Initialize directories and database connection
 (async () => {
@@ -269,18 +289,15 @@ app.post('/api/burn-fields', upload.single('pdf'), async (req, res) => {
 });
 
 
-
-
+// --- Conditional Frontend Serving Logic (Consolidated and Cleaned) ---
+const FRONTEND_DIST_PATH = path.join(__dirname, '../frontend/dist');
 
 if (process.env.NODE_ENV !== 'production') {
-    const FRONTEND_DIST_PATH = path.join(__dirname, '../frontend/dist');
-
     // 1. Serve the React frontend build files
     app.use(express.static(FRONTEND_DIST_PATH));
 
     // 2. Catch-all route to serve the React app for client-side routing
     app.get('*', (req, res) => {
-        // This ensures local development works by serving index.html
         res.sendFile(path.join(FRONTEND_DIST_PATH, 'index.html'));
     });
     
