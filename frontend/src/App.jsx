@@ -331,23 +331,38 @@ function App() {
       alert('Please place fields first');
       return;
     }
+    if (!pdfFile) {
+        alert('Please upload a PDF file first');
+        return;
+    }
 
     const fieldsPayload = fields.map(getNormalizedCoordinates);
     
+    const BACKEND_URL = import.meta.env.VITE_API_URL;
+    
+    if (!BACKEND_URL) {
+        alert('Configuration Error: Backend API URL (VITE_API_URL) is not defined in the environment.');
+        console.error("VITE_API_URL is missing. Check .env files in the 'frontend/' directory.");
+        return;
+    }
+
     setIsSubmitting(true);
     try {
       const formData = new FormData();
       formData.append('pdf', pdfFile);
       formData.append('fields', JSON.stringify(fieldsPayload)); 
       
-      const response = await fetch('/api/burn-fields', { method: 'POST', body: formData });
+      const response = await fetch(`${BACKEND_URL}/api/burn-fields`, { 
+          method: 'POST', 
+          body: formData 
+      });
       
       if (!response.ok) {
           const contentType = response.headers.get('content-type');
           if (contentType && contentType.includes('application/json')) {
               throw new Error((await response.json()).message || 'Failed to sign PDF');
           } else {
-              throw new Error(`Server returned status ${response.status}. Check backend logs.`);
+              throw new Error(`Server returned status ${response.status}. Check backend logs on Render/Railway.`);
           }
       }
       
@@ -364,8 +379,7 @@ function App() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-  
+};
 
   // --- Field Renderer Component ---
   const FieldComponent = ({ field }) => {
