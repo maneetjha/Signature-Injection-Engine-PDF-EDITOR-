@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment
+.env
+.env.local
+
+# Uploads and output
+backend/uploads/*
+backend/output/*
+!backend/uploads/.gitkeep
+!backend/output/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+frontend/build/
+frontend/dist/
+
+# Logs
+*.log
+npm-debug.log*
