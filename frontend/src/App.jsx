@@ -49,24 +49,6 @@ function App() {
   
   const updateField = (id, newProps) => {
     setFields(prev => prev.map(f => f.id === id ? { ...f, ...newProps } : f));
-    
-    // Re-focus the input element after state update to maintain typing continuity.
-    if (newProps.value !== undefined) {
-        setTimeout(() => {
-            const currentElement = fieldRefs.current[id]; 
-            const currentField = fields.find(f => f.id === id); 
-
-            if (currentElement && id === selectedFieldId) {
-                currentElement.focus();
-                
-                // Set cursor position to the end of text input
-                if (currentField?.type === 'text') { 
-                    const len = currentElement.value.length;
-                    currentElement.setSelectionRange(len, len);
-                }
-            }
-        }, 5); 
-    }
   };
 
   const deleteField = (id) => {
@@ -393,13 +375,18 @@ function App() {
 
     const localCanvasRef = useRef(null); 
     
-    // Use local state for date input to prevent re-renders on every keystroke (enables native behavior)
+    // Use local state for text/date inputs to prevent re-renders on every keystroke (enables native behavior)
+    const [localTextValue, setLocalTextValue] = useState(field.value || '');
     const [localDateValue, setLocalDateValue] = useState(field.value || '');
     
     // Sync local state when the field value changes externally
     useEffect(() => {
-        setLocalDateValue(field.value || '');
-    }, [field.value]);
+        if (field.type === 'text') {
+            setLocalTextValue(field.value || '');
+        } else if (field.type === 'date') {
+            setLocalDateValue(field.value || '');
+        }
+    }, [field.value, field.type]);
 
 
     // Dynamic callback ref to manage the element reference map (fieldRefs)
@@ -509,22 +496,24 @@ function App() {
         {isInput && (
           <input 
             type={field.type === 'date' ? 'date' : 'text'}
-            // Use local state for date inputs to maintain native focus/typing
-            value={field.type === 'date' ? localDateValue : field.value || ''} 
+            // Use local state for text/date inputs to maintain native focus/typing
+            value={field.type === 'date' ? localDateValue : localTextValue} 
             
             onChange={(e) => {
                 const newValue = e.target.value;
                 if (field.type === 'date') {
                     setLocalDateValue(newValue);
                 } else {
-                    updateField(field.id, { value: newValue });
+                    setLocalTextValue(newValue);
                 }
             }}
 
-            // Update global state only when focus is lost for date input
+            // Update global state only when focus is lost
             onBlur={(e) => {
                 if (field.type === 'date') {
                     updateField(field.id, { value: localDateValue });
+                } else {
+                    updateField(field.id, { value: localTextValue });
                 }
             }}
             
